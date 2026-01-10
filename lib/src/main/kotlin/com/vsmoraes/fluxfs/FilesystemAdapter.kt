@@ -12,7 +12,7 @@ interface FilesystemAdapter {
      *
      * @throws com.vsmoraes.fluxfs.exception.FileNotFound if the file doesn't exist
      */
-    fun read(file: String): ByteArray
+    suspend fun read(fileName: FileName): ByteArray
 
     /**
      * Writes content to a new file.
@@ -20,20 +20,20 @@ interface FilesystemAdapter {
      * @throws com.vsmoraes.fluxfs.exception.DirectoryNotFound if the parent directory doesn't exist
      * @throws com.vsmoraes.fluxfs.exception.FileAlreadyExists if the provided file already exists
      */
-    fun write(
-        file: String,
+    suspend fun write(
+        fileName: FileName,
         content: ByteArray,
     )
 
     /**
      * Checks if a regular file (not a directory) exists at the given path.
      */
-    fun fileExists(file: String): Boolean
+    suspend fun fileExists(fileName: FileName): Boolean
 
     /**
      * Checks if a directory exists at the given path.
      */
-    fun directoryExists(path: String): Boolean
+    suspend fun directoryExists(directoryName: DirectoryName): Boolean
 
     /**
      * Creates a directory at the specified path.
@@ -42,8 +42,8 @@ interface FilesystemAdapter {
      *                  when false, throws DirectoryNotFound if the immediate parent doesn't exist
      * @throws com.vsmoraes.fluxfs.exception.DirectoryNotFound when recursive is false and parent directory is missing
      */
-    fun createDirectory(
-        path: String,
+    suspend fun createDirectory(
+        directoryName: DirectoryName,
         recursive: Boolean = true,
     )
 }

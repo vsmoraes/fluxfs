@@ -1,81 +1,76 @@
 package com.vsmoraes.fluxfs.local
 
+import com.vsmoraes.fluxfs.DirectoryName
+import com.vsmoraes.fluxfs.FileName
 import com.vsmoraes.fluxfs.FilesystemAdapter
+import com.vsmoraes.fluxfs.PathNormalizer.parent
 import com.vsmoraes.fluxfs.exception.DirectoryNotFound
-import com.vsmoraes.fluxfs.exception.FileAlreadyExists
-import com.vsmoraes.fluxfs.exception.FileNotFound
 import com.vsmoraes.fluxfs.exception.ReadFileException
 import com.vsmoraes.fluxfs.exception.WriteFileException
-import com.vsmoraes.fluxfs.parent
+import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.isDirectory
+import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.isFile
+import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.requireDirectoryExists
+import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.requireFileExists
+import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.requireFileNotExists
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createDirectory
 import kotlin.io.path.exists
-import kotlin.io.path.isDirectory
-import kotlin.io.path.isRegularFile
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
 class LocalFilesystemAdapter : FilesystemAdapter {
-    override fun read(file: String): ByteArray {
-        if (fileExists(file).not()) {
-            throw FileNotFound(file)
+    override suspend fun read(fileName: FileName): ByteArray =
+        withContext(Dispatchers.IO) {
+            val file = fileName.requireFileExists()
+
+            try {
+                Path(file).readBytes()
+            } catch (e: Throwable) {
+                throw ReadFileException("Error reading $file from local storage", e)
+            }
         }
 
-        return try {
-            Path(file).readBytes()
-        } catch (e: Throwable) {
-            throw ReadFileException("Error reading $file from local storage", e)
-        }
-    }
-
-    override fun write(
-        file: String,
+    override suspend fun write(
+        fileName: FileName,
         content: ByteArray,
-    ) {
-        if (directoryExists(file.parent()).not()) {
-            throw DirectoryNotFound(file.parent())
-        }
+    ) = withContext(Dispatchers.IO) {
+        val file = fileName.requireFileNotExists()
+        fileName.parent().requireDirectoryExists()
 
-        if (fileExists(file)) {
-            throw FileAlreadyExists(file)
-        }
-
-        return try {
+        try {
             Path(file).writeBytes(content)
         } catch (e: Throwable) {
             throw WriteFileException("Error writing $file to local storage", e)
         }
     }
 
-    override fun fileExists(file: String): Boolean {
-        val f = Path(file)
-
-        return f.exists() && f.isRegularFile()
-    }
-
-    override fun directoryExists(path: String): Boolean {
-        val d = Path(path)
-
-        if (d.isRegularFile()) {
-            return d.parent.exists()
+    override suspend fun fileExists(fileName: FileName): Boolean =
+        withContext(Dispatchers.IO) {
+            fileName.isFile()
         }
 
-        return d.exists() && d.isDirectory()
-    }
+    override suspend fun directoryExists(directoryName: DirectoryName) =
+        withContext(Dispatchers.IO) {
+            directoryName.isDirectory()
+        }
 
-    override fun createDirectory(
-        path: String,
+    override suspend fun createDirectory(
+        directoryName: DirectoryName,
         recursive: Boolean,
     ) {
-        val dir = Path(path).parent
+        val dir = Path(directoryName).parent
 
-        if (dir.exists()) {
+        if (withContext(Dispatchers.IO) { dir.exists() }) {
             return
         }
 
         if (recursive) {
-            dir.createDirectories()
+            withContext(Dispatchers.IO) {
+                dir.createDirectories()
+            }
             return
         }
 
@@ -83,6 +78,8 @@ class LocalFilesystemAdapter : FilesystemAdapter {
             throw DirectoryNotFound(dir.parent.toString())
         }
 
-        dir.createDirectory()
+        withContext(Dispatchers.IO) {
+            dir.createDirectory()
+        }
     }
 }
