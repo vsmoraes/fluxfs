@@ -13,14 +13,15 @@ import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import aws.smithy.kotlin.runtime.content.ByteStream
 import aws.smithy.kotlin.runtime.content.decodeToString
 import aws.smithy.kotlin.runtime.net.url.Url
+import com.vsmoraes.fluxfs.FluxFSExtensions.shouldBeSuccess
+import com.vsmoraes.fluxfs.FluxResult
 import com.vsmoraes.fluxfs.PathNormalizer.ensureSuffix
 import com.vsmoraes.fluxfs.PathNormalizer.parent
-import com.vsmoraes.fluxfs.exception.DirectoryNotFound
-import com.vsmoraes.fluxfs.exception.FileAlreadyExists
-import com.vsmoraes.fluxfs.exception.FileNotFound
-import io.kotest.assertions.throwables.shouldThrow
+import com.vsmoraes.fluxfs.isError
+import com.vsmoraes.fluxfs.isSuccess
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeTypeOf
 
 class S3FilesystemAdapterTest :
     FunSpec({
@@ -87,37 +88,38 @@ class S3FilesystemAdapterTest :
             test("should succeed when reading a file") {
                 writeTmpFile()
                 val result = adapter.read(TMP_OBJECT_KEY)
-
-                result.decodeToString() shouldBe TMP_FILE_CONTENT
+                val file = result.shouldBeSuccess()
+                file.decodeToString() shouldBe TMP_FILE_CONTENT
             }
 
             test("should fail when trying to read a non-existent file") {
-                shouldThrow<FileNotFound> {
-                    adapter.read(INVALID_OBJECT_KEY)
-                }
+                val result = adapter.read(INVALID_OBJECT_KEY)
+                result.isError() shouldBe true
+                result.shouldBeTypeOf<FluxResult.Error.FileNotFound>()
             }
         }
 
         context("write file") {
             test("should fail to write a file if directory doesn't exist") {
-                shouldThrow<DirectoryNotFound> {
-                    adapter.write(TMP_OBJECT_KEY, TMP_FILE_CONTENT.toByteArray())
-                }
+                val result = adapter.write(TMP_OBJECT_KEY, TMP_FILE_CONTENT.toByteArray())
+                result.isError() shouldBe true
+                result.shouldBeTypeOf<FluxResult.Error.DirectoryNotFound>()
             }
 
             test("should fail to write a file that already exists") {
                 createDirectory()
                 writeTmpFile()
-                shouldThrow<FileAlreadyExists> {
-                    adapter.write(TMP_OBJECT_KEY, TMP_FILE_CONTENT.toByteArray())
-                }
+                val result = adapter.write(TMP_OBJECT_KEY, TMP_FILE_CONTENT.toByteArray())
+                result.isError() shouldBe true
+                result.shouldBeTypeOf<FluxResult.Error.FileAlreadyExists>()
             }
 
             test("should successfully write a file") {
                 createDirectory()
-                adapter.write(TMP_OBJECT_KEY, TMP_FILE_CONTENT.toByteArray())
+                val result = adapter.write(TMP_OBJECT_KEY, TMP_FILE_CONTENT.toByteArray())
+                result.isSuccess() shouldBe true
 
-                val result =
+                val file =
                     s3Client.getObject(
                         GetObjectRequest {
                             bucket = BUCKET_NAME
@@ -127,7 +129,7 @@ class S3FilesystemAdapterTest :
                         response.body?.decodeToString() ?: ""
                     }
 
-                result shouldBe TMP_FILE_CONTENT
+                file shouldBe TMP_FILE_CONTENT
             }
         }
     }) {

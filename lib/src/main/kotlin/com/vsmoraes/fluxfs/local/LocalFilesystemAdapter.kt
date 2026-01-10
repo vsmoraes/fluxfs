@@ -3,15 +3,15 @@ package com.vsmoraes.fluxfs.local
 import com.vsmoraes.fluxfs.DirectoryName
 import com.vsmoraes.fluxfs.FileName
 import com.vsmoraes.fluxfs.FilesystemAdapter
+import com.vsmoraes.fluxfs.FluxResult
+import com.vsmoraes.fluxfs.FluxResult.Error.DirectoryAlreadyExists
+import com.vsmoraes.fluxfs.FluxResult.Error.DirectoryNotFound
+import com.vsmoraes.fluxfs.FluxResult.Error.FileAlreadyExists
+import com.vsmoraes.fluxfs.FluxResult.Error.FileNotFound
+import com.vsmoraes.fluxfs.FluxResult.Error.IOError
 import com.vsmoraes.fluxfs.PathNormalizer.parent
-import com.vsmoraes.fluxfs.exception.DirectoryNotFound
-import com.vsmoraes.fluxfs.exception.ReadFileException
-import com.vsmoraes.fluxfs.exception.WriteFileException
 import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.isDirectory
 import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.isFile
-import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.requireDirectoryExists
-import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.requireFileExists
-import com.vsmoraes.fluxfs.local.LocalFilesystemAdapterExtensions.requireFileNotExists
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.io.path.Path
@@ -22,64 +22,64 @@ import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
 class LocalFilesystemAdapter : FilesystemAdapter {
-    override suspend fun read(fileName: FileName): ByteArray =
+    override suspend fun read(fileName: FileName) =
         withContext(Dispatchers.IO) {
-            val file = fileName.requireFileExists()
+            if (!fileName.isFile()) return@withContext FileNotFound(fileName)
 
-            try {
-                Path(file).readBytes()
-            } catch (e: Throwable) {
-                throw ReadFileException("Error reading $file from local storage", e)
-            }
+            runCatching { Path(fileName).readBytes() }
+                .fold(
+                    onSuccess = { FluxResult.Success(it) },
+                    onFailure = { IOError("Error reading $fileName from local storage", it) },
+                )
         }
 
     override suspend fun write(
         fileName: FileName,
         content: ByteArray,
     ) = withContext(Dispatchers.IO) {
-        val file = fileName.requireFileNotExists()
-        fileName.parent().requireDirectoryExists()
+        if (!fileName.parent().isDirectory()) return@withContext DirectoryNotFound(fileName.parent())
+        if (fileName.isFile()) return@withContext FileAlreadyExists(fileName)
 
-        try {
-            Path(file).writeBytes(content)
-        } catch (e: Throwable) {
-            throw WriteFileException("Error writing $file to local storage", e)
-        }
+        runCatching { Path(fileName).writeBytes(content) }
+            .fold(
+                onSuccess = { FluxResult.Success(it) },
+                onFailure = { IOError("Error writing $fileName to local storage", it) },
+            )
     }
 
-    override suspend fun fileExists(fileName: FileName): Boolean =
+    override suspend fun fileExists(fileName: FileName) =
         withContext(Dispatchers.IO) {
-            fileName.isFile()
+            runCatching { fileName.isFile() }
+                .fold(
+                    onSuccess = { FluxResult.Success(it) },
+                    onFailure = { IOError("Error checking if file exists $fileName", it) },
+                )
         }
 
     override suspend fun directoryExists(directoryName: DirectoryName) =
         withContext(Dispatchers.IO) {
-            directoryName.isDirectory()
+            runCatching { directoryName.isDirectory() }
+                .fold(
+                    onSuccess = { FluxResult.Success(it) },
+                    onFailure = { IOError("Error checking if directory exists $directoryName", it) },
+                )
         }
 
     override suspend fun createDirectory(
         directoryName: DirectoryName,
         recursive: Boolean,
-    ) {
-        val dir = Path(directoryName).parent
+    ) = withContext(Dispatchers.IO) {
+        val dir = Path(directoryName)
+        val parent = dir.parent
 
-        if (withContext(Dispatchers.IO) { dir.exists() }) {
-            return
-        }
+        if (dir.exists()) return@withContext DirectoryAlreadyExists(dir.toString())
+        if (!recursive && !parent.exists()) return@withContext DirectoryNotFound(parent.toString())
 
-        if (recursive) {
-            withContext(Dispatchers.IO) {
-                dir.createDirectories()
-            }
-            return
-        }
-
-        if (!directoryExists(dir.parent.toString())) {
-            throw DirectoryNotFound(dir.parent.toString())
-        }
-
-        withContext(Dispatchers.IO) {
-            dir.createDirectory()
-        }
+        runCatching {
+            if (recursive) parent.createDirectories() else parent.createDirectory()
+        }.fold(
+            onSuccess = { FluxResult.Success(Unit) },
+            onFailure = { IOError("Error creating directory $directoryName", it) },
+        )
     }
 }
