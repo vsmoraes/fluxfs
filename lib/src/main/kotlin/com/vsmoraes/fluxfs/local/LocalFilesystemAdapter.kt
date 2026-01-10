@@ -14,13 +14,13 @@ import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
 class LocalFilesystemAdapter : FilesystemAdapter {
-    override suspend fun read(file: String): ByteArray {
+    override fun read(file: String): ByteArray {
         if (fileExists(file).not()) throw FileNotFound(file)
 
         return Path(file).readBytes()
     }
 
-    override suspend fun write(
+    override fun write(
         file: String,
         content: ByteArray,
     ) {

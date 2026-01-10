@@ -1,9 +1,9 @@
 package com.vsmoraes.fluxfs
 
 interface FilesystemAdapter {
-    suspend fun read(file: String): ByteArray
+    fun read(file: String): ByteArray
 
-    suspend fun write(
+    fun write(
         file: String,
         content: ByteArray,
     )
