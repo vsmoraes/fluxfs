@@ -18,8 +18,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
     // Core Kotest dependencies
-    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
-    testImplementation("io.kotest:kotest-assertions-core:5.8.0")
+    testImplementation("io.kotest:kotest-runner-junit5:6.0.7")
+    testImplementation("io.kotest:kotest-assertions-core:6.0.7")
 }
 
 java {
