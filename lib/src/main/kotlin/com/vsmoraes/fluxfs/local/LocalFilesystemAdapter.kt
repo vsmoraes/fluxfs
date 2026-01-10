@@ -4,6 +4,9 @@ import com.vsmoraes.fluxfs.FilesystemAdapter
 import com.vsmoraes.fluxfs.exception.DirectoryNotFound
 import com.vsmoraes.fluxfs.exception.FileAlreadyExists
 import com.vsmoraes.fluxfs.exception.FileNotFound
+import com.vsmoraes.fluxfs.exception.ReadFileException
+import com.vsmoraes.fluxfs.exception.WriteFileException
+import com.vsmoraes.fluxfs.parent
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createDirectory
@@ -15,19 +18,34 @@ import kotlin.io.path.writeBytes
 
 class LocalFilesystemAdapter : FilesystemAdapter {
     override fun read(file: String): ByteArray {
-        if (fileExists(file).not()) throw FileNotFound(file)
+        if (fileExists(file).not()) {
+            throw FileNotFound(file)
+        }
 
-        return Path(file).readBytes()
+        return try {
+            Path(file).readBytes()
+        } catch (e: Throwable) {
+            throw ReadFileException("Error reading $file from local storage", e)
+        }
     }
 
     override fun write(
         file: String,
         content: ByteArray,
     ) {
-        if (directoryExists(Path(file).parent.toString()).not()) throw DirectoryNotFound(file)
-        if (fileExists(file)) throw FileAlreadyExists(file)
+        if (directoryExists(file.parent()).not()) {
+            throw DirectoryNotFound(file.parent())
+        }
 
-        Path(file).writeBytes(content)
+        if (fileExists(file)) {
+            throw FileAlreadyExists(file)
+        }
+
+        return try {
+            Path(file).writeBytes(content)
+        } catch (e: Throwable) {
+            throw WriteFileException("Error writing $file to local storage", e)
+        }
     }
 
     override fun fileExists(file: String): Boolean {
@@ -52,14 +70,19 @@ class LocalFilesystemAdapter : FilesystemAdapter {
     ) {
         val dir = Path(path).parent
 
-        if (dir.exists()) return
+        if (dir.exists()) {
+            return
+        }
 
         if (recursive) {
             dir.createDirectories()
             return
         }
 
-        if (!directoryExists(dir.parent.toString())) throw DirectoryNotFound(dir.parent.toString())
+        if (!directoryExists(dir.parent.toString())) {
+            throw DirectoryNotFound(dir.parent.toString())
+        }
+
         dir.createDirectory()
     }
 }
