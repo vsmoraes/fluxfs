@@ -15,7 +15,7 @@ dependencies {
     implementation("aws.sdk.kotlin:s3:1.3.97")
 
     // Coroutines (if not already added)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
     // Core Kotest dependencies
     testImplementation("io.kotest:kotest-runner-junit5:6.0.7")
