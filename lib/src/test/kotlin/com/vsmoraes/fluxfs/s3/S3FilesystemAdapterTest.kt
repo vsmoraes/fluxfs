@@ -13,11 +13,11 @@ import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import aws.smithy.kotlin.runtime.content.ByteStream
 import aws.smithy.kotlin.runtime.content.decodeToString
 import aws.smithy.kotlin.runtime.net.url.Url
-import com.vsmoraes.fluxfs.ensureSuffix
+import com.vsmoraes.fluxfs.PathNormalizer.ensureSuffix
+import com.vsmoraes.fluxfs.PathNormalizer.parent
 import com.vsmoraes.fluxfs.exception.DirectoryNotFound
 import com.vsmoraes.fluxfs.exception.FileAlreadyExists
 import com.vsmoraes.fluxfs.exception.FileNotFound
-import com.vsmoraes.fluxfs.parent
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
