@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     // S3 SDK
-    implementation("aws.sdk.kotlin:s3:1.3.97")
+    implementation("aws.sdk.kotlin:s3:1.5.117")
 
     // Coroutines (if not already added)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
