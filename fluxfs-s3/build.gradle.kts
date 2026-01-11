@@ -5,16 +5,12 @@ plugins {
 }
 
 dependencies {
-    // Depend on core module
     api(project(":fluxfs-core"))
     testImplementation(testFixtures(project(":fluxfs-core")))
 
-    // S3-specific dependencies
     implementation("aws.sdk.kotlin:s3:1.5.117")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 }
 
-// Publishing configuration (similar to core)
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -51,6 +47,7 @@ publishing {
             }
         }
     }
+
     repositories {
         maven {
             name = "GitHubPackages"
@@ -61,7 +58,6 @@ publishing {
             }
         }
 
-        // For Maven Central (requires Sonatype account)
         maven {
             name = "OSSRH"
             url =
@@ -78,7 +74,6 @@ publishing {
     }
 }
 
-// Signing for Maven Central
 signing {
     val signingKey = System.getenv("SIGNING_KEY")
     val signingPassword = System.getenv("SIGNING_PASSWORD")

@@ -74,7 +74,7 @@ class S3FilesystemAdapter(
             onFailure = { IOError("Error checking if file exists $fileName", it) },
         )
 
-    override suspend fun directoryExists(directoryName: DirectoryName) = fileExists(directoryName.parent().ensureSuffix("/"))
+    override suspend fun directoryExists(directoryName: DirectoryName) = fileExists(directoryName.ensureSuffix("/"))
 
     override suspend fun createDirectory(
         directoryName: DirectoryName,
