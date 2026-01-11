@@ -1,5 +1,7 @@
-plugins {
-}
-
 rootProject.name = "fluxfs"
-include("lib")
+
+include(
+    "fluxfs-core",
+    "fluxfs-local",
+    "fluxfs-s3",
+)

@@ -7,7 +7,6 @@ import com.vsmoraes.fluxfs.isSuccess
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
-import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
@@ -45,7 +44,7 @@ class LocalFilesystemAdapterTest :
 
         context("write file") {
             test("should write content to a file") {
-                File(TMP_FILE).exists() shouldBe false
+                Path(TMP_FILE).exists() shouldBe false
 
                 val result = adapter.write(TMP_FILE, FILE_CONTENT.encodeToByteArray())
                 result.isSuccess() shouldBe true
