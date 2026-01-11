@@ -1,11 +1,12 @@
 package com.vsmoraes.fluxfs.local
 
-import com.vsmoraes.fluxfs.exception.DirectoryNotFound
-import com.vsmoraes.fluxfs.exception.FileAlreadyExists
-import com.vsmoraes.fluxfs.exception.FileNotFound
-import io.kotest.assertions.throwables.shouldThrow
+import com.vsmoraes.fluxfs.FluxFSExtensions.shouldBeSuccess
+import com.vsmoraes.fluxfs.FluxResult
+import com.vsmoraes.fluxfs.isError
+import com.vsmoraes.fluxfs.isSuccess
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeTypeOf
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
@@ -24,7 +25,10 @@ class LocalFilesystemAdapterTest :
 
         context("read file") {
             test("should fail when trying to read a non-existent file") {
-                shouldThrow<FileNotFound> { adapter.read(INVALID_FILE) }
+                val result = adapter.read(INVALID_FILE)
+
+                result.isError() shouldBe true
+                result.shouldBeTypeOf<FluxResult.Error.FileNotFound>()
             }
 
             test("should succeed when reading a file") {
@@ -33,7 +37,9 @@ class LocalFilesystemAdapterTest :
 
                 tmpFile.writeText(FILE_CONTENT)
 
-                adapter.read(TMP_FILE).decodeToString() shouldBe FILE_CONTENT
+                val result = adapter.read(TMP_FILE)
+                val value = result.shouldBeSuccess()
+                value.decodeToString() shouldBe FILE_CONTENT
             }
         }
 
@@ -41,24 +47,25 @@ class LocalFilesystemAdapterTest :
             test("should write content to a file") {
                 File(TMP_FILE).exists() shouldBe false
 
-                adapter.write(TMP_FILE, FILE_CONTENT.encodeToByteArray())
+                val result = adapter.write(TMP_FILE, FILE_CONTENT.encodeToByteArray())
+                result.isSuccess() shouldBe true
 
-                val result = Path(TMP_FILE).readText()
-                result shouldBe FILE_CONTENT
+                val file = Path(TMP_FILE).readText()
+                file shouldBe FILE_CONTENT
             }
 
             test("should fail when directory doesn't exit") {
-                shouldThrow<DirectoryNotFound> {
-                    adapter.write(TMP_FILE_INVALID_DIRECTORY, FILE_CONTENT.encodeToByteArray())
-                }
+                val result = adapter.write(TMP_FILE_INVALID_DIRECTORY, FILE_CONTENT.encodeToByteArray())
+                result.isError() shouldBe true
+                result.shouldBeTypeOf<FluxResult.Error.DirectoryNotFound>()
             }
 
             test("should fail when trying to write to a file that already exists") {
                 adapter.write(TMP_FILE, FILE_CONTENT.encodeToByteArray())
                 Path(TMP_FILE).exists() shouldBe true
-                shouldThrow<FileAlreadyExists> {
-                    adapter.write(TMP_FILE, FILE_CONTENT.encodeToByteArray())
-                }
+                val result = adapter.write(TMP_FILE, FILE_CONTENT.encodeToByteArray())
+                result.isError() shouldBe true
+                result.shouldBeTypeOf<FluxResult.Error.FileAlreadyExists>()
             }
         }
     }) {

@@ -9,41 +9,35 @@ package com.vsmoraes.fluxfs
 interface FilesystemAdapter {
     /**
      * Reads the entire file content into memory.
-     *
-     * @throws com.vsmoraes.fluxfs.exception.FileNotFound if the file doesn't exist
      */
-    suspend fun read(fileName: FileName): ByteArray
+    suspend fun read(fileName: FileName): FluxResult<ByteArray>
 
     /**
      * Writes content to a new file.
-     *
-     * @throws com.vsmoraes.fluxfs.exception.DirectoryNotFound if the parent directory doesn't exist
-     * @throws com.vsmoraes.fluxfs.exception.FileAlreadyExists if the provided file already exists
      */
     suspend fun write(
         fileName: FileName,
         content: ByteArray,
-    )
+    ): FluxResult<Unit>
 
     /**
      * Checks if a regular file (not a directory) exists at the given path.
      */
-    suspend fun fileExists(fileName: FileName): Boolean
+    suspend fun fileExists(fileName: FileName): FluxResult<Boolean>
 
     /**
      * Checks if a directory exists at the given path.
      */
-    suspend fun directoryExists(directoryName: DirectoryName): Boolean
+    suspend fun directoryExists(directoryName: DirectoryName): FluxResult<Boolean>
 
     /**
      * Creates a directory at the specified path.
      *
      * @param recursive when true, creates all missing parent directories;
      *                  when false, throws DirectoryNotFound if the immediate parent doesn't exist
-     * @throws com.vsmoraes.fluxfs.exception.DirectoryNotFound when recursive is false and parent directory is missing
      */
     suspend fun createDirectory(
         directoryName: DirectoryName,
         recursive: Boolean = true,
-    )
+    ): FluxResult<Unit>
 }
