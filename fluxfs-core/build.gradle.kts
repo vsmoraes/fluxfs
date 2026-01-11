@@ -1,19 +1,9 @@
 plugins {
     `java-library`
-    `java-test-fixtures`
     `maven-publish`
     signing
 }
 
-dependencies {
-    // Test fixtures need their own dependencies
-    testFixturesImplementation("io.kotest:kotest-assertions-core:6.0.7")
-
-    // If your test fixtures also need coroutines testing utilities:
-    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-}
-
-// Publishing configuration
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -24,7 +14,7 @@ publishing {
 
             pom {
                 name.set("FluxFS Core")
-                description.set("Core interfaces for FluxFS")
+                description.set("Core interfaces and contracts for FluxFS")
                 url.set("https://github.com/vsmoraes/fluxfs")
 
                 licenses {
@@ -61,7 +51,6 @@ publishing {
             }
         }
 
-        // For Maven Central (requires Sonatype account)
         maven {
             name = "OSSRH"
             url =
@@ -78,7 +67,6 @@ publishing {
     }
 }
 
-// Signing for Maven Central
 signing {
     val signingKey = System.getenv("SIGNING_KEY")
     val signingPassword = System.getenv("SIGNING_PASSWORD")
@@ -86,7 +74,6 @@ signing {
     sign(publishing.publications["maven"])
 }
 
-// Generate sources jar
 java {
     withSourcesJar()
     withJavadocJar()

@@ -5,23 +5,21 @@ plugins {
 }
 
 dependencies {
-    // Depend on core module
     api(project(":fluxfs-core"))
     testImplementation(testFixtures(project(":fluxfs-core")))
 }
 
-// Publishing configuration (similar to core)
 publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
 
             groupId = "com.vsmoraes.fluxfs"
-            artifactId = "fluxfs-s3"
+            artifactId = "fluxfs-local"
 
             pom {
                 name.set("FluxFS Local")
-                description.set("Local storage adapter for FluxFS")
+                description.set("Local filesystem adapter for FluxFS")
                 url.set("https://github.com/vsmoraes/fluxfs")
 
                 licenses {
@@ -47,6 +45,7 @@ publishing {
             }
         }
     }
+
     repositories {
         maven {
             name = "GitHubPackages"
@@ -57,7 +56,6 @@ publishing {
             }
         }
 
-        // For Maven Central (requires Sonatype account)
         maven {
             name = "OSSRH"
             url =
@@ -74,7 +72,6 @@ publishing {
     }
 }
 
-// Signing for Maven Central
 signing {
     val signingKey = System.getenv("SIGNING_KEY")
     val signingPassword = System.getenv("SIGNING_PASSWORD")
