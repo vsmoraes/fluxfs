@@ -20,12 +20,23 @@ import com.vsmoraes.fluxfs.PathNormalizer.parent
 import com.vsmoraes.fluxfs.isFalse
 import com.vsmoraes.fluxfs.isTrue
 
+/**
+ * AWS S3 filesystem adapter implementation for FluxFS.
+ *
+ * This adapter treats S3 objects as files and simulates directory structures
+ * using S3 prefixes and special directory marker objects (keys ending with /).
+ *
+ * @param s3Client The AWS S3 client to use for operations
+ * @param bucketName The S3 bucket name where files will be stored
+ */
 class S3FilesystemAdapter(
     private val s3Client: S3Client,
     private val bucketName: String,
 ) : FilesystemAdapter {
     override suspend fun read(fileName: FileName): FluxResult<ByteArray> {
-        if (fileExists(fileName).isFalse()) return FileNotFound(fileName)
+        if (fileExists(fileName).isFalse()) {
+            return FileNotFound(fileName)
+        }
 
         return runCatching {
             s3Client.getObject(
@@ -46,8 +57,15 @@ class S3FilesystemAdapter(
         fileName: FileName,
         content: ByteArray,
     ): FluxResult<Unit> {
-        if (directoryExists(fileName.parent()).isFalse()) return DirectoryNotFound(fileName.parent())
-        if (fileExists(fileName).isTrue()) return FileAlreadyExists(fileName)
+        val parentDir = fileName.parent()
+
+        if (directoryExists(parentDir).isFalse()) {
+            return DirectoryNotFound(parentDir)
+        }
+
+        if (fileExists(fileName).isTrue()) {
+            return FileAlreadyExists(fileName)
+        }
 
         return runCatching {
             s3Client.putObject {
@@ -63,15 +81,17 @@ class S3FilesystemAdapter(
 
     override suspend fun fileExists(fileName: FileName) =
         runCatching {
-            s3Client
-                .listObjectsV2 {
+            val objects =
+                s3Client.listObjectsV2 {
                     bucket = bucketName
                     prefix = fileName
-                }.contents
-                ?.isNotEmpty() ?: false
+                    maxKeys = 1
+                }
+
+            objects.contents?.any { it.key == fileName } ?: false
         }.fold(
             onSuccess = { FluxResult.Success(it) },
-            onFailure = { IOError("Error checking if file exists $fileName", it) },
+            onFailure = { IOError("Error checking if file exists: $fileName", it) },
         )
 
     override suspend fun directoryExists(directoryName: DirectoryName) = fileExists(directoryName.ensureSuffix("/"))
@@ -80,10 +100,13 @@ class S3FilesystemAdapter(
         directoryName: DirectoryName,
         recursive: Boolean,
     ): FluxResult<Unit> {
-        if (directoryExists(directoryName).isTrue()) return DirectoryAlreadyExists(directoryName)
+        val dir = directoryName.ensureSuffix("/")
+
+        if (directoryExists(directoryName).isTrue()) {
+            return DirectoryAlreadyExists(directoryName)
+        }
 
         return runCatching {
-            val dir = directoryName.ensureSuffix("/")
             s3Client.putObject {
                 bucket = bucketName
                 key = dir

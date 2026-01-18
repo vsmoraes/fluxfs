@@ -1,80 +1,28 @@
 plugins {
-    `java-library`
-    `maven-publish`
-    signing
+    id("fluxfs.publishing-conventions")
+    `java-test-fixtures`
+}
+
+dependencies {
+    implementation(libs.kotlinx.coroutines.core)
+
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.mockk)
+
+    testFixturesImplementation(libs.kotest.runner.junit5)
+    testFixturesImplementation(libs.kotest.assertions.core)
+    testFixturesImplementation(libs.mockk)
 }
 
 publishing {
     publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-
-            groupId = "com.vsmoraes.fluxfs"
+        named<MavenPublication>("maven") {
             artifactId = "fluxfs-core"
-
             pom {
                 name.set("FluxFS Core")
-                description.set("Core interfaces and contracts for FluxFS")
-                url.set("https://github.com/vsmoraes/fluxfs")
-
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("vsmoraes")
-                        name.set("Vinicius Moraes")
-                        email.set("vinicius@vsmoraes.com")
-                    }
-                }
-
-                scm {
-                    connection.set("scm:git:git://github.com/vsmoraes/fluxfs.git")
-                    developerConnection.set("scm:git:ssh://github.com/vsmoraes/fluxfs.git")
-                    url.set("https://github.com/vsmoraes/fluxfs")
-                }
+                description.set("Core interfaces and contracts for FluxFS - a Kotlin filesystem abstraction library")
             }
         }
     }
-
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/vsmoraes/fluxfs")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-
-        maven {
-            name = "OSSRH"
-            url =
-                if (version.toString().endsWith("SNAPSHOT")) {
-                    uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-                } else {
-                    uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-                }
-            credentials {
-                username = System.getenv("OSSRH_USERNAME")
-                password = System.getenv("OSSRH_PASSWORD")
-            }
-        }
-    }
-}
-
-signing {
-    val signingKey = System.getenv("SIGNING_KEY")
-    val signingPassword = System.getenv("SIGNING_PASSWORD")
-    useInMemoryPgpKeys(signingKey, signingPassword)
-    sign(publishing.publications["maven"])
-}
-
-java {
-    withSourcesJar()
-    withJavadocJar()
 }
