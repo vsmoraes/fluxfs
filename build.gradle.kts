@@ -3,6 +3,10 @@ import org.jlleitschuh.gradle.ktlint.KtlintExtension
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1" apply false
+
+    kotlin("plugin.spring") version "1.9.0" apply false
+    id("org.springframework.boot") version "3.3.2" apply false
+    id("io.spring.dependency-management") version "1.1.3" apply false
 }
 
 // Shared configuration for all subprojects
