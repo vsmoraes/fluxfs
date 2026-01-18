@@ -1,19 +1,10 @@
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.spring")
-    id("io.spring.dependency-management")
-    id("org.springframework.boot")
-}
-
-afterEvaluate {
-    tasks
-        .matching {
-            it.name.contains("ktlint", ignoreCase = true)
-        }.configureEach {
-            enabled = false
-        }
+    id("fluxfs.publishing-conventions")
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 dependencies {
@@ -21,11 +12,15 @@ dependencies {
     compileOnly(project(":fluxfs-s3"))
     compileOnly(project(":fluxfs-local"))
 
-    implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-autoconfigure")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(libs.spring.boot.starter)
+    implementation(libs.spring.boot.autoconfigure)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.kotlinx.coroutines.core)
 
-    compileOnly("aws.sdk.kotlin:s3:1.5.122")
+    compileOnly(libs.aws.s3)
+
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
 }
 
 tasks.named<BootJar>("bootJar") {
@@ -36,6 +31,19 @@ tasks.named<Jar>("jar") {
     enabled = true
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
+// Disable ktlint for Spring Boot configuration classes
+tasks
+    .matching { it.name.contains("ktlint", ignoreCase = true) }
+    .configureEach { enabled = false }
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            artifactId = "fluxfs-spring-boot-starter"
+            pom {
+                name.set("FluxFS Spring Boot Starter")
+                description.set("Spring Boot auto-configuration for FluxFS")
+            }
+        }
+    }
 }
