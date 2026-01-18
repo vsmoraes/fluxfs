@@ -54,7 +54,7 @@ import com.vsmoraes.fluxfs.local.LocalFilesystemAdapter
 
 suspend fun main() {
     // Create a FluxFS instance with local filesystem
-    val fluxFS = FluxFS.local()
+    val fluxFS = FluxFS(LocalFilesystemAdapter())
     
     // Write a file
     fluxFS.write("/tmp/hello.txt", "Hello, FluxFS!".encodeToByteArray())
@@ -74,38 +74,6 @@ suspend fun main() {
 
 ## 📚 Core Concepts
 
-### FilesystemAdapter
-
-The heart of FluxFS is the `FilesystemAdapter` interface, which defines five core operations:
-
-```kotlin
-interface FilesystemAdapter {
-    suspend fun read(fileName: FileName): FluxResult<ByteArray>
-    suspend fun write(fileName: FileName, content: ByteArray): FluxResult<Unit>
-    suspend fun fileExists(fileName: FileName): FluxResult<Boolean>
-    suspend fun directoryExists(directoryName: DirectoryName): FluxResult<Boolean>
-    suspend fun createDirectory(directoryName: DirectoryName, recursive: Boolean = true): FluxResult<Unit>
-}
-```
-
-### FluxResult
-
-FluxFS uses `FluxResult` instead of throwing exceptions, making error handling explicit and type-safe:
-
-```kotlin
-sealed interface FluxResult<out T> {
-    data class Success<T>(val value: T) : FluxResult<T>
-    
-    sealed interface Error : FluxResult<Nothing> {
-        data class FileNotFound(val path: String) : Error
-        data class FileAlreadyExists(val path: String) : Error
-        data class DirectoryNotFound(val path: String) : Error
-        data class DirectoryAlreadyExists(val path: String) : Error
-        data class IOError(val message: String, val cause: Throwable?) : Error
-    }
-}
-```
-
 ### Working with Results
 
 FluxFS provides rich extension functions for handling results:
@@ -120,8 +88,6 @@ when (val result = fluxFS.read("file.txt")) {
 
 // Functional style with chaining
 fluxFS.read("file.txt")
-    .map { it.decodeToString() }
-    .map { it.uppercase() }
     .onSuccess { println(it) }
     .onError { println("Error: $it") }
 
@@ -159,9 +125,8 @@ if (!exists) {
 
 // Read and parse
 fluxFS.read("/tmp/myapp/config.json")
-    .map { it.decodeToString() }
     .onSuccess { json -> 
-        println("Config: $json")
+        println("Config: ${json.decodeToString()}")
     }
 ```
 
@@ -234,8 +199,7 @@ FluxFS provides auto-configuration for Spring Boot applications:
 # application.yml
 fluxfs:
   s3:
-    bucket: my-application-bucket
-    region: us-east-1
+    bucketName: my-application-bucket
 ```
 
 #### Usage
@@ -290,25 +254,6 @@ suspend fun safeRead(path: String): String? {
             }
         }
     )
-}
-```
-
-### Retry Logic
-
-```kotlin
-suspend fun readWithRetry(
-    path: String, 
-    maxAttempts: Int = 3
-): FluxResult<ByteArray> {
-    repeat(maxAttempts) { attempt ->
-        val result = fluxFS.read(path)
-        if (result.isSuccess()) return result
-        
-        if (attempt < maxAttempts - 1) {
-            delay(100 * (attempt + 1))  // Exponential backoff
-        }
-    }
-    return FluxResult.Error.IOError("Failed after $maxAttempts attempts")
 }
 ```
 
@@ -388,13 +333,6 @@ docker-compose up -d
 docker-compose down
 ```
 
-### CI/CD
-
-FluxFS includes comprehensive GitHub Actions workflows:
-
-- **CI with Integration Tests** - Runs all tests including S3 integration tests against LocalStack
-- **Dependabot Auto-Merge** - Automatically merges patch and minor dependency updates
-
 ## 📖 API Reference
 
 ### Core Operations
@@ -413,8 +351,6 @@ FluxFS includes comprehensive GitHub Actions workflows:
 |----------|-------------|
 | `onSuccess(action)` | Executes action if Success |
 | `onError(action)` | Executes action if Error |
-| `map(transform)` | Transforms Success value |
-| `flatMap(transform)` | FlatMaps Success value |
 | `getOrNull()` | Returns value or null |
 | `getOrThrow()` | Returns value or throws |
 | `getOrElse(default)` | Returns value or default |
@@ -466,41 +402,3 @@ cd fluxfs
 docker-compose up -d
 ./gradlew :fluxfs-s3:test
 ```
-
-## 📄 License
-
-FluxFS is released under the [MIT License](https://opensource.org/licenses/MIT).
-
-```
-MIT License
-
-Copyright (c) 2024 Vinicius Moraes
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## 🙏 Acknowledgments
-
-FluxFS was inspired by the need for a modern, Kotlin-idiomatic filesystem abstraction that embraces coroutines and explicit error handling.
-
----
-
-**Made with ❤️ using Kotlin**
-
-For questions, issues, or feature requests, please [open an issue](https://github.com/vsmoraes/fluxfs/issues) on GitHub.
