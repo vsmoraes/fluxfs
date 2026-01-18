@@ -8,7 +8,7 @@ dependencies {
     api(project(":fluxfs-core"))
     testImplementation(testFixtures(project(":fluxfs-core")))
 
-    implementation("aws.sdk.kotlin:s3:1.5.117")
+    implementation("aws.sdk.kotlin:s3:1.5.122")
 }
 
 publishing {
