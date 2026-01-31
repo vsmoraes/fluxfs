@@ -5,7 +5,7 @@ kotest = "6.0.7"
 mockk = "1.14.7"
 ktlint-plugin = "14.0.1"
 ktlint = "1.0.1"
-aws-sdk = "1.5.122"
+aws-sdk = "1.6.7"
 spring-boot = "3.3.2"
 spring-dependency-management = "1.1.6"
 
