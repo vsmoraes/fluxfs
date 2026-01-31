@@ -2,7 +2,7 @@
 kotlin = "2.3.0"
 kotlinx-coroutines = "1.10.2"
 kotest = "6.0.7"
-mockk = "1.14.7"
+mockk = "1.14.9"
 ktlint-plugin = "14.0.1"
 ktlint = "1.0.1"
 aws-sdk = "1.5.122"
