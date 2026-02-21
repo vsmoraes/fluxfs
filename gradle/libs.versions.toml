@@ -7,7 +7,7 @@ ktlint-plugin = "14.0.1"
 ktlint = "1.0.1"
 aws-sdk = "1.6.22"
 spring-boot = "3.3.2"
-spring-dependency-management = "1.1.6"
+spring-dependency-management = "1.1.7"
 
 [libraries]
 # Kotlin
