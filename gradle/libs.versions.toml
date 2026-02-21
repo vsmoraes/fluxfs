@@ -6,7 +6,7 @@ mockk = "1.14.9"
 ktlint-plugin = "14.0.1"
 ktlint = "1.0.1"
 aws-sdk = "1.6.22"
-spring-boot = "3.3.2"
+spring-boot = "4.0.3"
 spring-dependency-management = "1.1.6"
 
 [libraries]
