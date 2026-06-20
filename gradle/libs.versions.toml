@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.4.0"
 kotlinx-coroutines = "1.11.0"
-kotest = "6.1.11"
+kotest = "6.2.1"
 mockk = "1.14.11"
 ktlint-plugin = "14.2.0"
 ktlint = "1.0.1"
